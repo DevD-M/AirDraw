@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title> airDraw</title>
+
+<style> 
+body {
+  background: #0d0f12;
+  color: white;
+}
+#draw {
+position: relative;
+width: 640px;
+height: 480px;
+}
+#webcam, #overlay{
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 640px;
+	height: 480px;
+	transform: scaleX(-1);
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script> 
+</head>
+<body>
+<div id="draw">
+
+<video id="webcam" autoplay playsinline muted>
+</video>
+<canvas id="overlay" width="640" height="480">
+</canvas>
+
+</div>
+<select id="gestureMode">
+  <option value="point">Index finger</option>
+  <option value="pinch">Pinch</option>
+</select>
+<button id="clearBtn"> clear</button>
+<button id="toggleLandmarks"> toggle</button>
+<script>
+const btn =document.getElementById("clearBtn")
+const videoEl = document.getElementById("webcam");
+const canvasEl = document.getElementById("overlay");
+const gestureEL= document.getElementById("gestureMode");
+const toggleEL = document.getElementById("toggleLandmarks");
+const drawingCanvas = document.createElement('canvas');
+let prevX = null;
+let prevY = null;
+
+let showLandmarks = true;
+
+drawingCanvas.width = 640;
+drawingCanvas.height = 480;
+drawingCanvas.style.position = 'absolute';
+drawingCanvas.style.top = '0';
+drawingCanvas.style.left = '0';
+drawingCanvas.style.width = '640px';
+drawingCanvas.style.height = '480px';
+drawingCanvas.style.transform = 'scaleX(-1)';
+
+const drawDiv = document.getElementById('draw');
+drawDiv.insertBefore(drawingCanvas, canvasEl);
+
+const drawCtx = drawingCanvas.getContext('2d');
+drawCtx.strokeStyle = '#7fffd4';
+drawCtx.lineWidth = 4;
+drawCtx.lineCap = 'round';
+
+const THUMB_TIP = 4;
+const INDEX_TIP = 8;
+const INDEX_MCP = 5;
+const MIDDLE_TIP = 12;
+const MIDDLE_MCP = 9;
+const WRIST = 0;
+function dist(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+const hands = new Hands({
+  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+});
+
+hands.setOptions({
+  maxNumHands: 1,
+  modelComplexity: 1,
+  minDetectionConfidence: 0.7,
+  minTrackingConfidence: 0.6
+});
+hands.onResults(onResults);
+function onResults(results) {
+  if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+    prevX = null;
+    prevY = null;
+    return;
+  }
+
+  const landmarks = results.multiHandLandmarks[0];
+  const gestureActive = detectGesture(landmarks);
+
+  const tip = landmarks[INDEX_TIP];
+  const x = tip.x * canvasEl.width;
+  const y = tip.y * canvasEl.height;
+
+  if (gestureActive) {
+    if (prevX !== null) {
+      drawCtx.beginPath();
+      drawCtx.moveTo(prevX, prevY);
+      drawCtx.lineTo(x, y);
+      drawCtx.stroke();
+    }
+    prevX = x;
+    prevY = y;
+  } else {
+    prevX = null;
+    prevY = null;
+  }
+  if (showLandmarks) {
+  
+  const ctx = canvasEl.getContext('2d');
+  ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+  ctx.fillStyle = '#ff6b6b';
+  for (const lm of landmarks) {
+    ctx.beginPath();
+    ctx.arc(lm.x * canvasEl.width, lm.y * canvasEl.height, 3, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+} else {
+  const ctx = canvasEl.getContext('2d');
+  ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+}
+}
+
+async function processFrame() {
+  await hands.send({ image: videoEl });  
+  requestAnimationFrame(processFrame);   
+}
+async function startCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { width: 640, height: 480 }
+  });
+  videoEl.srcObject = stream;
+  await videoEl.play();
+  processFrame(); 
+}
+
+btn.addEventListener("click", function() {
+  drawCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+  
+});
+toggleEL.addEventListener("click", function() {
+  showLandmarks = !showLandmarks;
+});
+startCamera();
+function isIndexPointing(landmarks) {
+	const wrist = landmarks[WRIST];
+	const indexTip = landmarks[INDEX_TIP];
+	const indexMcp = landmarks[INDEX_MCP];
+	const midTip = landmarks[MIDDLE_TIP];
+	const midMcp = landmarks[MIDDLE_MCP];
+	const indexExtended = dist(indexTip, wrist) > dist(indexMcp, wrist) * 1.3;
+    const middleCurled = dist(midTip, wrist) < dist(midMcp, wrist) * 1.3;
+	
+	return indexExtended && middleCurled;
+}
+
+function isPinching(landmarks) {
+  const thumbTip = landmarks[THUMB_TIP];
+  const indexTip = landmarks[INDEX_TIP];
+  return dist(thumbTip, indexTip) < 0.055;
+}
+function detectGesture(landmarks) {
+  const mode = gestureEL.value;
+  if (mode === 'point') return isIndexPointing(landmarks);
+  if (mode === 'pinch') return isPinching(landmarks);
+  return false;
+}
+</script>
+
+</body>
+
+</html>

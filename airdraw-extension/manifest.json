@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "AirDraw",
+  "version": "1.0",
+  "description": "Draw with hand gestures",
+  "permissions": ["camera"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+		"mediapipe/hands.js",
+		"content.js"]
+    }
+  ]
+}
