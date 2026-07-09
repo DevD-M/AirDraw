@@ -6,7 +6,7 @@ Draw on screen using hand gestures — no touch required.
 - MediaPipe Hands (Google) — real-time hand landmark detection
 - HTML5 Canvas API — drawing layer
 - Vanilla JavaScript — gesture logic & DOM manipulation
-- CSS
+
 
 ## Features
 - Index finger gesture — draw mode
