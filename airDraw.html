@@ -43,6 +43,7 @@ height: 480px;
 </select>
 <button id="clearBtn"> clear</button>
 <button id="toggleLandmarks"> toggle</button>
+<input type="color" id="colorPicker" value="#7fffd4">
 <script>
 const btn =document.getElementById("clearBtn")
 const videoEl = document.getElementById("webcam");
@@ -50,6 +51,7 @@ const canvasEl = document.getElementById("overlay");
 const gestureEL= document.getElementById("gestureMode");
 const toggleEL = document.getElementById("toggleLandmarks");
 const drawingCanvas = document.createElement('canvas');
+const colorPicker = document.getElementById("colorPicker");
 let prevX = null;
 let prevY = null;
 
@@ -154,6 +156,9 @@ btn.addEventListener("click", function() {
 });
 toggleEL.addEventListener("click", function() {
   showLandmarks = !showLandmarks;
+});
+colorPicker.addEventListener("input", function() {
+  drawCtx.strokeStyle = colorPicker.value;
 });
 startCamera();
 function isIndexPointing(landmarks) {
