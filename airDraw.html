@@ -9,6 +9,16 @@
 body {
   background: #0d0f12;
   color: white;
+  display: flex;
+  padding-top: 20px;
+  flex-direction: column;
+  align-items: center;
+}
+#controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 12px;
 }
 #draw {
 position: relative;
@@ -37,6 +47,8 @@ height: 480px;
 </canvas>
 
 </div>
+<div id="controls">
+
 <select id="gestureMode">
   <option value="point">Index finger</option>
   <option value="pinch">Pinch</option>
@@ -44,6 +56,7 @@ height: 480px;
 <button id="clearBtn"> clear</button>
 <button id="toggleLandmarks"> toggle</button>
 <input type="color" id="colorPicker" value="#7fffd4">
+</div>
 <script>
 const btn =document.getElementById("clearBtn")
 const videoEl = document.getElementById("webcam");
